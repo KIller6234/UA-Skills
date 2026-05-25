@@ -18,12 +18,12 @@ export const envSchema = z.object({
   JWT_REFRESH_TTL: z.coerce.number().default(604800),
 
   // LLM
-  LLM_PRIMARY_PROVIDER: z.enum(['openai', 'anthropic']).default('openai'),
-  LLM_FALLBACK_PROVIDER: z.enum(['openai', 'anthropic']).default('anthropic'),
-  LLM_MODEL_OPENAI: z.string().default('gpt-4o-mini'),
-  LLM_MODEL_ANTHROPIC: z.string().default('claude-haiku-4-5-20251001'),
-  LLM_API_KEY_OPENAI: z.string().optional(),
-  LLM_API_KEY_ANTHROPIC: z.string().optional(),
+  LLM_PRIMARY_PROVIDER: z.enum(['google', 'groq']).default('google'),
+  LLM_FALLBACK_PROVIDER: z.enum(['google', 'groq']).default('groq'),
+  LLM_MODEL_GOOGLE: z.string().default('gemini-1.5-flash'),
+  LLM_MODEL_GROQ: z.string().default('llama-3.1-8b-instant'),
+  LLM_API_KEY_GOOGLE: z.string().optional(),
+  LLM_API_KEY_GROQ: z.string().optional(),
   LLM_CONCURRENCY: z.coerce.number().default(3),
   LLM_MAX_INPUT_TOKENS: z.coerce.number().default(2000),
   LLM_PROMPT_VERSION: z.string().default('v1'),
