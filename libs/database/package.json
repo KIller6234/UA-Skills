@@ -14,7 +14,7 @@
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",
-    "cuid2": "^2.2.2"
+    "@paralleldrive/cuid2": "^2.2.2"
   },
   "devDependencies": {
     "@types/jest": "^29.5.13",
