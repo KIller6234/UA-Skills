@@ -1,0 +1,361 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Enums ────────────────────────────────────────────────────────────────────
+
+enum FeedStatus {
+  PENDING
+  ACTIVE
+  PAUSED
+  ERROR
+}
+
+enum ArticleStatus {
+  FETCHED
+  CLASSIFIED
+  FILTERED
+  FAILED
+}
+
+enum EntityKind {
+  PERSON
+  COMPANY
+  PRODUCT
+  TECHNOLOGY
+  LOCATION
+  OTHER
+}
+
+enum DigestPeriod {
+  DAY
+  WEEK
+  MONTH
+}
+
+// ─── Users ────────────────────────────────────────────────────────────────────
+
+model User {
+  id                      String    @id @default(cuid())
+  tenantId                String
+  email                   String    @unique
+  passwordHash            String
+  emailConfirmedAt        DateTime?
+  emailConfirmToken       String?
+  emailConfirmExpiresAt   DateTime?
+  displayName             String?
+  timezone                String    @default("UTC")
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+
+  feeds            Feed[]
+  categories       UserCategory[]
+  axes             CategorizationAxis[]
+  classifications  ArticleClassification[]
+  digests          Digest[]
+
+  @@index([tenantId])
+  @@index([emailConfirmToken])
+}
+
+// ─── Feeds ────────────────────────────────────────────────────────────────────
+
+model Feed {
+  id                  String     @id @default(cuid())
+  userId              String
+  user                User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  url                 String
+  canonicalUrl        String
+  title               String?
+  description         String?
+  siteUrl             String?
+  faviconUrl          String?
+  status              FeedStatus @default(PENDING)
+  lastError           String?
+  lastErrorAt         DateTime?
+  consecutiveFailures Int        @default(0)
+  pollIntervalSeconds Int        @default(3600)
+  lastPolledAt        DateTime?
+  nextPollAt          DateTime   @default(now())
+  etag                String?
+  lastModified        String?
+  createdAt           DateTime   @default(now())
+  updatedAt           DateTime   @updatedAt
+
+  feedArticles FeedArticle[]
+
+  @@unique([userId, canonicalUrl])
+  @@index([nextPollAt])
+  @@index([userId, status])
+}
+
+// ─── Articles (shared, deduplicated globally) ─────────────────────────────────
+
+model Article {
+  id           String        @id @default(cuid())
+  canonicalUrl String        @unique
+  contentHash  String        @unique
+  title        String
+  author       String?
+  publishedAt  DateTime?
+  sourceDomain String
+  wordCount    Int           @default(0)
+  bodyText     String
+  excerpt      String?
+  imageUrl     String?
+  language     String?
+  status       ArticleStatus @default(FETCHED)
+  metadata     Json          @default("{}")
+  createdAt    DateTime      @default(now())
+
+  feedArticles    FeedArticle[]
+  entities        ArticleEntity[]
+  classifications ArticleClassification[]
+  similarA        ArticleSimilar[] @relation("ArticleA")
+  similarB        ArticleSimilar[] @relation("ArticleB")
+  digestItems     DigestItem[]
+
+  @@index([publishedAt(sort: Desc)])
+  @@index([sourceDomain])
+  @@index([status])
+}
+
+// ─── Feed ↔ Article join (per-user) ──────────────────────────────────────────
+
+model FeedArticle {
+  feedId      String
+  articleId   String
+  userId      String
+  firstSeenAt DateTime @default(now())
+
+  feed    Feed    @relation(fields: [feedId], references: [id], onDelete: Cascade)
+  article Article @relation(fields: [articleId], references: [id], onDelete: Cascade)
+
+  @@id([feedId, articleId])
+  @@index([userId, firstSeenAt(sort: Desc)])
+  @@index([articleId])
+}
+
+// ─── Entities (shared, deduplicated globally) ─────────────────────────────────
+
+model Entity {
+  id             String     @id @default(cuid())
+  kind           EntityKind
+  canonicalName  String
+  normalizedName String
+  aliases        String[]
+  description    String?
+  mentionCount   Int        @default(0)
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  articles    ArticleEntity[]
+  coMentionsA EntityCoMention[] @relation("EntityA")
+  coMentionsB EntityCoMention[] @relation("EntityB")
+
+  @@unique([kind, normalizedName])
+  @@index([mentionCount(sort: Desc)])
+}
+
+// ─── Article ↔ Entity mentions (shared) ──────────────────────────────────────
+
+model ArticleEntity {
+  articleId    String
+  entityId     String
+  mentionCount Int    @default(1)
+  confidence   Float  @default(1.0)
+  salience     Float?
+
+  article Article @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  entity  Entity  @relation(fields: [entityId], references: [id], onDelete: Cascade)
+
+  @@id([articleId, entityId])
+  @@index([entityId])
+}
+
+// ─── Entity co-mentions (shared, undirected: entityAId < entityBId) ───────────
+
+model EntityCoMention {
+  entityAId  String
+  entityBId  String
+  coCount    Int   @default(1)
+  weight     Float @default(1.0)
+  lastSeenAt DateTime @default(now())
+
+  entityA Entity @relation("EntityA", fields: [entityAId], references: [id], onDelete: Cascade)
+  entityB Entity @relation("EntityB", fields: [entityBId], references: [id], onDelete: Cascade)
+
+  @@id([entityAId, entityBId])
+  @@index([entityBId])
+}
+
+// ─── Article similarity (shared, optional) ────────────────────────────────────
+
+model ArticleSimilar {
+  articleAId  String
+  articleBId  String
+  similarity  Float
+  method      String
+  computedAt  DateTime @default(now())
+
+  articleA Article @relation("ArticleA", fields: [articleAId], references: [id], onDelete: Cascade)
+  articleB Article @relation("ArticleB", fields: [articleBId], references: [id], onDelete: Cascade)
+
+  @@id([articleAId, articleBId])
+  @@index([articleBId])
+}
+
+// ─── User categories (per-user, no LLM) ───────────────────────────────────────
+
+model UserCategory {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name       String
+  slug       String
+  color      String?
+  sortOrder  Int      @default(0)
+  isArchived Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([userId, slug])
+  @@index([userId])
+}
+
+// ─── Categorization axes (per-user, seeded with defaults) ────────────────────
+
+model CategorizationAxis {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  key             String
+  label           String
+  description     String?
+  isSystemDefault Boolean  @default(false)
+  sortOrder       Int      @default(0)
+  createdAt       DateTime @default(now())
+
+  values AxisValue[]
+
+  @@unique([userId, key])
+  @@index([userId])
+}
+
+model AxisValue {
+  id        String             @id @default(cuid())
+  axisId    String
+  axis      CategorizationAxis @relation(fields: [axisId], references: [id], onDelete: Cascade)
+  value     String
+  label     String
+  sortOrder Int                @default(0)
+
+  @@unique([axisId, value])
+}
+
+// ─── Article classifications (per-user, LLM output) ───────────────────────────
+
+model ArticleClassification {
+  id            String   @id @default(cuid())
+  userId        String
+  articleId     String
+  axisValues    Json     @default("{}")
+  categoryIds   String[]
+  importance    Int      @default(50)
+  summary       String
+  summaryTldr   String?
+  keywords      String[]
+  model         String
+  promptVersion String
+  llmCacheHit   Boolean  @default(false)
+  createdAt     DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  article Article @relation(fields: [articleId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, articleId, promptVersion])
+  @@index([userId, importance(sort: Desc)])
+  @@index([articleId])
+}
+
+// ─── LLM cache (shared) ────────────────────────────────────────────────────────
+
+model LlmCache {
+  id            String   @id @default(cuid())
+  cacheKey      String   @unique
+  operation     String
+  model         String
+  promptVersion String
+  contentHash   String
+  result        Json
+  tokensInput   Int?
+  tokensOutput  Int?
+  hitCount      Int      @default(0)
+  lastHitAt     DateTime?
+  expiresAt     DateTime?
+  createdAt     DateTime @default(now())
+
+  @@index([contentHash])
+}
+
+// ─── LLM telemetry ────────────────────────────────────────────────────────────
+
+model LlmTelemetry {
+  id           String   @id @default(cuid())
+  userId       String?
+  operation    String
+  provider     String
+  model        String
+  tokensInput  Int      @default(0)
+  tokensOutput Int      @default(0)
+  costUsd      Decimal  @default(0) @db.Decimal(12, 6)
+  latencyMs    Int?
+  cacheHit     Boolean  @default(false)
+  success      Boolean  @default(true)
+  errorCode    String?
+  articleId    String?
+  createdAt    DateTime @default(now())
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([operation, createdAt(sort: Desc)])
+}
+
+// ─── Digests (per-user) ────────────────────────────────────────────────────────
+
+model Digest {
+  id           String       @id @default(cuid())
+  userId       String
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  period       DigestPeriod
+  periodStart  DateTime
+  periodEnd    DateTime
+  title        String
+  summary      String?
+  bodyMarkdown String?
+  articleCount Int          @default(0)
+  createdAt    DateTime     @default(now())
+
+  items DigestItem[]
+
+  @@unique([userId, period, periodStart])
+  @@index([userId, createdAt(sort: Desc)])
+}
+
+model DigestItem {
+  digestId  String
+  articleId String
+  rank      Int
+  reason    String?
+
+  digest  Digest  @relation(fields: [digestId], references: [id], onDelete: Cascade)
+  article Article @relation(fields: [articleId], references: [id], onDelete: Cascade)
+
+  @@id([digestId, articleId])
+  @@index([digestId, rank])
+}

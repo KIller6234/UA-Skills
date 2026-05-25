@@ -1,0 +1,21 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "paths": {
+      "@nih/config":   ["../../libs/config/src/index.ts"],
+      "@nih/database": ["../../libs/database/src/index.ts"],
+      "@nih/queues":   ["../../libs/queues/src/index.ts"],
+      "@nih/llm":      ["../../libs/llm/src/index.ts"],
+      "@nih/feed":     ["../../libs/feed/src/index.ts"],
+      "@nih/ner":      ["../../libs/ner/src/index.ts"],
+      "@nih/auth":     ["../../libs/auth/src/index.ts"],
+      "@nih/common":   ["../../libs/common/src/index.ts"]
+    }
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"]
+}
