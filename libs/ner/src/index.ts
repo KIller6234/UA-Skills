@@ -1,1 +1,2 @@
-// ner lib — exports added incrementally
+export { EntityDedupService } from './entity-dedup.service';
+export { NerModule } from './ner.module';
