@@ -227,6 +227,38 @@ async function main() {
     }),
   ]);
 
+  const DEFAULT_AXES = [
+    { key: 'content_type', label: 'Тип контенту', values: ['Новина', 'Аналіз', 'Туторіал', 'Реліз', 'Думка'] },
+    { key: 'reader_level', label: 'Рівень читача', values: ['Junior', 'Middle', 'Senior'] },
+    { key: 'region',       label: 'Регіон',        values: ['UA', 'EU', 'US', 'Global'] },
+    { key: 'tone',         label: 'Тональність',   values: ['Нейтральна', 'Промоційна', 'Критична'] },
+  ];
+
+  await Promise.all(
+    DEFAULT_AXES.map((axis, i) =>
+      prisma.categorizationAxis.upsert({
+        where: { userId_key: { userId: user.id, key: axis.key } },
+        update: {},
+        create: {
+          userId: user.id,
+          key: axis.key,
+          label: axis.label,
+          isSystemDefault: true,
+          sortOrder: i,
+          values: {
+            create: axis.values.map((v, j) => ({
+              value: v.toLowerCase().replace(/\s/g, '_'),
+              label: v,
+              sortOrder: j,
+            })),
+          },
+        },
+      }),
+    ),
+  );
+
+  console.log(`Axes: ${DEFAULT_AXES.length}`);
+
   const categoryIds = categories.map((c) => c.id);
 
   const articles: string[] = [];
