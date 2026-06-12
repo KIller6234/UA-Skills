@@ -1,4 +1,4 @@
-import { Injectable, OnApplicationShutdown } from '@nestjs/common';
+import { Injectable, OnApplicationShutdown, Logger } from '@nestjs/common';
 import { Worker, Job } from 'bullmq';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '@nih/database';
@@ -35,6 +35,7 @@ function periodLabel(period: DigestPeriod, start: Date): string {
 @Injectable()
 export class DigestProcessor implements OnApplicationShutdown {
   private readonly worker: Worker;
+  private readonly logger = new Logger(DigestProcessor.name);
 
   constructor(
     private readonly prisma: PrismaService,
@@ -83,7 +84,11 @@ export class DigestProcessor implements OnApplicationShutdown {
       },
     });
 
-    if (!articles.length) return;
+    this.logger.log(`Digest [${period}] for user ${userId}: found ${articles.length} articles`);
+    if (!articles.length) {
+      this.logger.warn(`Digest [${period}] skipped — no classified articles for user ${userId}`);
+      return;
+    }
 
     const sorted = articles
       .filter((a) => a.classifications[0])
@@ -108,6 +113,7 @@ export class DigestProcessor implements OnApplicationShutdown {
       topEntityNames: topEntities.map((e) => e.canonicalName),
     });
 
+    this.logger.log(`Digest [${period}] created for user ${userId} with ${sorted.length} articles`);
     await this.prisma.digest.upsert({
       where: {
         userId_period_periodStart: {

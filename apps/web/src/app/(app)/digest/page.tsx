@@ -158,7 +158,10 @@ export default function DigestPage() {
             </svg>
           </div>
           <p className="text-white font-medium mb-1">No {tab} digests yet</p>
-          <p className="text-gray-500 text-sm mb-5">Generate a digest to see a summary of your recent articles.</p>
+          <p className="text-gray-500 text-sm mb-1">Generate a digest to see a summary of your recent articles.</p>
+          <p className="text-gray-600 text-xs mb-5">
+            Requires classified articles — add feeds first and wait for processing.
+          </p>
           <button
             onClick={() => handleTrigger(tab)}
             disabled={triggering}
