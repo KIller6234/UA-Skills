@@ -27,6 +27,7 @@ export default function DigestPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [triggering, setTriggering] = useState(false);
   const [savingSettings, setSavingSettings] = useState(false);
+  const [triggerMsg, setTriggerMsg] = useState<string | null>(null);
 
   const { data: settings, mutate: mutateSettings } = useSWR('digest-settings', () => api.digests.getSettings());
 
@@ -70,11 +71,16 @@ export default function DigestPage() {
 
   const handleTrigger = async (period: DigestPeriod) => {
     setTriggering(true);
+    setTriggerMsg(null);
     try {
       await api.digests.trigger(period);
-      await mutate(['digests', period]);
+      setTriggerMsg('Digest queued! Refreshing in a moment…');
+      setTimeout(async () => {
+        await mutate(['digests', period]);
+        setTriggerMsg(null);
+      }, 3000);
     } catch (e) {
-      console.error(e);
+      setTriggerMsg(e instanceof Error ? e.message : 'Failed to queue digest');
     } finally {
       setTriggering(false);
     }
@@ -87,7 +93,14 @@ export default function DigestPage() {
   ];
 
   return (
-    <div className="p-8 max-w-7xl mx-auto">
+    <div className="p-8 w-full">
+      {triggerMsg && (
+        <div className={`fixed top-4 right-4 z-50 px-4 py-3 rounded-lg text-sm shadow-lg border ${
+          triggerMsg.startsWith('Digest') ? 'bg-[#0f1117] border-blue-500/30 text-blue-300' : 'bg-[#0f1117] border-red-500/30 text-red-300'
+        }`}>
+          {triggerMsg}
+        </div>
+      )}
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-xl font-semibold text-white">Digests</h1>

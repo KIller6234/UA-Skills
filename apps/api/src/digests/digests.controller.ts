@@ -18,8 +18,8 @@ export class DigestsController {
   }
 
   @Post()
-  trigger(@Req() req: { user: { sub: string } }, @Query('period') period = 'day') {
-    return this.digests.trigger(req.user.sub, period);
+  trigger(@Req() req: { user: { sub: string } }, @Body() body: { period?: string }) {
+    return this.digests.trigger(req.user.sub, body.period ?? 'day');
   }
 
   @Get('settings')

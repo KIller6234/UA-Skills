@@ -46,6 +46,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const { t, locale, setLocale } = useI18n();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [showTour, setShowTour] = useState(false);
 
   const handleLogout = async () => {
     await api.logout();
@@ -82,7 +83,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <>
-      <OnboardingModal />
+      <OnboardingModal forceOpen={showTour} onClose={() => setShowTour(false)} />
       {/* Mobile sidebar overlay */}
       {sidebarOpen && (
         <div
@@ -143,6 +144,18 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 ))}
               </div>
             </div>
+
+            <button
+              onClick={() => setShowTour(true)}
+              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-md text-[13px] transition-colors hover:bg-white/5"
+              style={{ color: 'var(--app-text-muted)' }}
+            >
+              <svg className="w-4 h-4 flex-shrink-0" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <circle cx="8" cy="8" r="6" />
+                <path d="M8 7v4M8 5.5v.5" strokeLinecap="round" />
+              </svg>
+              {t('nav.tour') ?? 'Tour'}
+            </button>
 
             <button
               onClick={handleLogout}

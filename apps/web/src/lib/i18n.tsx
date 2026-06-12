@@ -11,7 +11,7 @@ const translations = {
       dashboard: 'Dashboard', articles: 'Articles', digest: 'Digests',
       graph: 'Knowledge Graph', feeds: 'Feeds', categories: 'Categories',
       axes: 'Axes', regeneration: 'Regeneration', settings: 'Settings',
-      content: 'CONTENT', manage: 'MANAGE', signOut: 'Sign out',
+      content: 'CONTENT', manage: 'MANAGE', signOut: 'Sign out', tour: 'Tour',
     },
     auth: {
       signIn: 'Sign in', signUp: 'Create account',
@@ -53,7 +53,7 @@ const translations = {
       dashboard: 'Дашборд', articles: 'Статті', digest: 'Дайджести',
       graph: 'Граф знань', feeds: 'Стрічки', categories: 'Категорії',
       axes: 'Осі', regeneration: 'Регенерація', settings: 'Налаштування',
-      content: 'КОНТЕНТ', manage: 'КЕРУВАННЯ', signOut: 'Вийти',
+      content: 'КОНТЕНТ', manage: 'КЕРУВАННЯ', signOut: 'Вийти', tour: 'Тур',
     },
     auth: {
       signIn: 'Увійти', signUp: 'Створити акаунт',
@@ -95,7 +95,7 @@ const translations = {
       dashboard: 'Dashboard', articles: 'Artikel', digest: 'Digest',
       graph: 'Wissensgraph', feeds: 'Feeds', categories: 'Kategorien',
       axes: 'Achsen', regeneration: 'Regenerierung', settings: 'Einstellungen',
-      content: 'INHALTE', manage: 'VERWALTEN', signOut: 'Abmelden',
+      content: 'INHALTE', manage: 'VERWALTEN', signOut: 'Abmelden', tour: 'Tour',
     },
     auth: {
       signIn: 'Anmelden', signUp: 'Konto erstellen',

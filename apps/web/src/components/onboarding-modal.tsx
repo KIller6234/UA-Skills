@@ -52,21 +52,34 @@ const STEPS = [
   },
 ];
 
-export function OnboardingModal() {
+interface OnboardingModalProps {
+  forceOpen?: boolean;
+  onClose?: () => void;
+}
+
+export function OnboardingModal({ forceOpen, onClose }: OnboardingModalProps) {
   const { t } = useI18n();
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState(0);
 
   useEffect(() => {
-    if (!localStorage.getItem(DONE_KEY)) {
+    if (forceOpen) {
+      setStep(0);
+      setOpen(true);
+    }
+  }, [forceOpen]);
+
+  useEffect(() => {
+    if (!forceOpen && !localStorage.getItem(DONE_KEY)) {
       const timer = setTimeout(() => setOpen(true), 600);
       return () => clearTimeout(timer);
     }
-  }, []);
+  }, [forceOpen]);
 
   const dismiss = () => {
     localStorage.setItem(DONE_KEY, '1');
     setOpen(false);
+    onClose?.();
   };
 
   if (!open) {return null;}
