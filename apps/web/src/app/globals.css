@@ -1,0 +1,75 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Theme CSS variables ─────────────────────────────────────── */
+:root {
+  /* Auth pages */
+  --auth-bg: #080a0f;
+  --auth-card: rgba(15, 17, 23, 0.9);
+  --auth-border: rgba(255, 255, 255, 0.08);
+  --auth-input-bg: rgba(255, 255, 255, 0.04);
+  --auth-text: #f9fafb;
+  --auth-text-muted: #6b7280;
+  --auth-accent: #3b82f6;
+
+  /* App shell */
+  --app-bg: #0d0f14;
+  --app-sidebar: #0f1117;
+  --app-card: #131620;
+  --app-card-2: #151820;
+  --app-border: rgba(255, 255, 255, 0.05);
+  --app-border-md: rgba(255, 255, 255, 0.08);
+  --app-text: #f9fafb;
+  --app-text-muted: #6b7280;
+  --app-text-dim: #374151;
+  --app-scrollbar: rgba(255, 255, 255, 0.08);
+}
+
+html.light {
+  /* Auth pages */
+  --auth-bg: #eef2f7;
+  --auth-card: rgba(255, 255, 255, 0.95);
+  --auth-border: rgba(0, 0, 0, 0.10);
+  --auth-input-bg: rgba(0, 0, 0, 0.03);
+  --auth-text: #111827;
+  --auth-text-muted: #9ca3af;
+  --auth-accent: #2563eb;
+
+  /* App shell */
+  --app-bg: #f0f4f8;
+  --app-sidebar: #ffffff;
+  --app-card: #ffffff;
+  --app-card-2: #f8fafc;
+  --app-border: rgba(0, 0, 0, 0.07);
+  --app-border-md: rgba(0, 0, 0, 0.10);
+  --app-text: #111827;
+  --app-text-muted: #6b7280;
+  --app-text-dim: #9ca3af;
+  --app-scrollbar: rgba(0, 0, 0, 0.10);
+}
+
+/* ── Page transition animation ───────────────────────────────── */
+@keyframes fadeSlideIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.25s ease both;
+}
+
+.animate-page {
+  animation: fadeSlideIn 0.3s ease both;
+}
+
+/* ── Scrollbar ───────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.15); }
