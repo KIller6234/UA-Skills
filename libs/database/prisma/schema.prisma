@@ -54,11 +54,13 @@ model User {
   createdAt               DateTime  @default(now())
   updatedAt               DateTime  @updatedAt
 
-  feeds            Feed[]
-  categories       UserCategory[]
-  axes             CategorizationAxis[]
-  classifications  ArticleClassification[]
-  digests          Digest[]
+  feeds              Feed[]
+  categories         UserCategory[]
+  axes               CategorizationAxis[]
+  classifications    ArticleClassification[]
+  digests            Digest[]
+  refreshTokens      RefreshToken[]
+  regenerationRuns   RegenerationRun[]
 
   @@index([tenantId])
   @@index([emailConfirmToken])
@@ -358,4 +360,43 @@ model DigestItem {
 
   @@id([digestId, articleId])
   @@index([digestId, rank])
+}
+
+// ─── Refresh tokens ────────────────────────────────────────────────────────────
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+// ─── Regeneration runs ────────────────────────────────────────────────────────
+
+enum RegenerationStatus {
+  RUNNING
+  COMPLETED
+  PAUSED
+  FAILED
+}
+
+model RegenerationRun {
+  id                 String             @id @default(cuid())
+  userId             String
+  user               User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  status             RegenerationStatus @default(RUNNING)
+  progress           Int                @default(0)
+  processedArticles  Int                @default(0)
+  totalArticles      Int                @default(0)
+  llmCalls           Int                @default(0)
+  estimatedCostUsd   Float              @default(0)
+  startedAt          DateTime           @default(now())
+  completedAt        DateTime?
+
+  @@index([userId, startedAt(sort: Desc)])
 }
