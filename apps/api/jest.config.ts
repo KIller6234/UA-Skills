@@ -8,13 +8,15 @@ const config: Config = {
   collectCoverageFrom: ['**/*.(t|j)s'],
   coverageDirectory: '../coverage',
   testEnvironment: 'node',
+  globals: { 'ts-jest': { diagnostics: false, isolatedModules: true } },
   moduleNameMapper: {
-    '^@nih/config$': '<rootDir>/../../libs/config/src/index.ts',
-    '^@nih/database$': '<rootDir>/../../libs/database/src/index.ts',
-    '^@nih/queues$': '<rootDir>/../../libs/queues/src/index.ts',
-    '^@nih/auth$': '<rootDir>/../../libs/auth/src/index.ts',
-    '^@nih/common$': '<rootDir>/../../libs/common/src/index.ts',
-    '^@nih/feed$': '<rootDir>/../../libs/feed/src/index.ts',
+    '^@nih/config$': '<rootDir>/../../../libs/config/src/index.ts',
+    '^@nih/database$': '<rootDir>/../../../libs/database/src/index.ts',
+    '^@nih/queues$': '<rootDir>/../../../libs/queues/src/index.ts',
+    '^@nih/auth$': '<rootDir>/../../../libs/auth/src/index.ts',
+    '^@nih/common$': '<rootDir>/../../../libs/common/src/index.ts',
+    '^@nih/feed$': '<rootDir>/../../../libs/feed/src/index.ts',
+    '^@prisma/client$': '<rootDir>/../../../libs/database/node_modules/@prisma/client',
   },
 };
 
