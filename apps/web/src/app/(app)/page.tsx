@@ -9,6 +9,7 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
+  Legend,
   ResponsiveContainer,
 } from 'recharts';
 import { api, type DashboardPeriod, type DashboardStats } from '@/lib/api';
@@ -107,6 +108,10 @@ function ActivityChart({ data }: { data: DashboardStats['activityChart'] }) {
             <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
             <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
           </linearGradient>
+          <linearGradient id="llmGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.25} />
+            <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0} />
+          </linearGradient>
         </defs>
         <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
         <XAxis
@@ -132,6 +137,11 @@ function ActivityChart({ data }: { data: DashboardStats['activityChart'] }) {
           }}
           labelStyle={{ color: '#9ca3af' }}
         />
+        <Legend
+          wrapperStyle={{ fontSize: 11, color: '#6b7280', paddingTop: 8 }}
+          iconSize={8}
+          iconType="circle"
+        />
         <Area
           type="monotone"
           dataKey="articles"
@@ -139,6 +149,15 @@ function ActivityChart({ data }: { data: DashboardStats['activityChart'] }) {
           stroke="#3b82f6"
           strokeWidth={2}
           fill="url(#articlesGrad)"
+          dot={false}
+        />
+        <Area
+          type="monotone"
+          dataKey="llmCalls"
+          name="LLM Calls"
+          stroke="#8b5cf6"
+          strokeWidth={2}
+          fill="url(#llmGrad)"
           dot={false}
         />
       </AreaChart>

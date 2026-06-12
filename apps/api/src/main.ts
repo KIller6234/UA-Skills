@@ -35,15 +35,13 @@ async function bootstrap(): Promise<void> {
 
   app.setGlobalPrefix('api');
 
-  if (process.env['NODE_ENV'] !== 'production') {
-    const config = new DocumentBuilder()
-      .setTitle('News Intelligence Hub API')
-      .setVersion('1.0')
-      .addBearerAuth()
-      .build();
-    const document = SwaggerModule.createDocument(app, config);
-    SwaggerModule.setup('api/docs', app, document);
-  }
+  const swaggerConfig = new DocumentBuilder()
+    .setTitle('News Intelligence Hub API')
+    .setVersion('1.0')
+    .addBearerAuth()
+    .build();
+  const document = SwaggerModule.createDocument(app, swaggerConfig);
+  SwaggerModule.setup('api/docs', app, document);
 
   const port = parseInt(process.env['PORT'] ?? '3000', 10);
   await app.listen(port);

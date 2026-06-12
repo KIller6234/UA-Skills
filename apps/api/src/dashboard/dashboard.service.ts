@@ -196,10 +196,10 @@ export class DashboardService {
         importance: a.classifications[0]?.importance ?? null,
         feedTitle: a.feedArticles[0]?.feed.title ?? null,
       })),
-      activityChart: (activityRaw as { date: Date; articles: bigint }[]).map((r) => ({
+      activityChart: (activityRaw as { date: Date; articles: bigint; llmCalls: bigint }[]).map((r) => ({
         date: r.date.toISOString().slice(0, 10),
         articles: Number(r.articles),
-        llmCalls: 0,
+        llmCalls: Number(r.llmCalls),
       })),
     };
   }
