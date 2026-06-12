@@ -6,6 +6,7 @@ import { type Env } from '@nih/config';
 import { JwtStrategy } from '@nih/auth';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
+import { EmailService } from './email.service';
 import { GitHubStrategy } from './strategies/github.strategy';
 import { GoogleStrategy } from './strategies/google.strategy';
 
@@ -21,7 +22,7 @@ import { GoogleStrategy } from './strategies/google.strategy';
       inject: [ConfigService],
     }),
   ],
-  providers: [AuthService, JwtStrategy, GitHubStrategy, GoogleStrategy],
+  providers: [AuthService, EmailService, JwtStrategy, GitHubStrategy, GoogleStrategy],
   controllers: [AuthController],
   exports: [JwtStrategy, JwtModule],
 })

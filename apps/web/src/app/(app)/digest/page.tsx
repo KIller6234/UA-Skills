@@ -26,6 +26,31 @@ export default function DigestPage() {
   const [tab, setTab] = useState<DigestPeriod>('day');
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [triggering, setTriggering] = useState(false);
+  const [savingSettings, setSavingSettings] = useState(false);
+
+  const { data: settings, mutate: mutateSettings } = useSWR('digest-settings', () => api.digests.getSettings());
+
+  const handleToggleEmail = async () => {
+    if (!settings) { return; }
+    setSavingSettings(true);
+    try {
+      const updated = await api.digests.updateSettings({ digestEmailEnabled: !settings.digestEmailEnabled });
+      await mutateSettings(updated, false);
+    } finally {
+      setSavingSettings(false);
+    }
+  };
+
+  const handleHourChange = async (h: number) => {
+    if (!settings) { return; }
+    setSavingSettings(true);
+    try {
+      const updated = await api.digests.updateSettings({ digestHour: h });
+      await mutateSettings(updated, false);
+    } finally {
+      setSavingSettings(false);
+    }
+  };
 
   const { data: listData, isLoading } = useSWR(
     ['digests', tab],
@@ -38,6 +63,10 @@ export default function DigestPage() {
   );
 
   const items: DigestListItem[] = listData?.items ?? [];
+
+  const handlePrint = () => {
+    window.print();
+  };
 
   const handleTrigger = async (period: DigestPeriod) => {
     setTriggering(true);
@@ -64,7 +93,7 @@ export default function DigestPage() {
           <h1 className="text-xl font-semibold text-white">Digests</h1>
           <p className="text-sm text-gray-500 mt-0.5">AI-generated summaries of your news feed</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 no-print">
           {TABS.map(({ key, label }) => (
             <button
               key={key}
@@ -75,10 +104,20 @@ export default function DigestPage() {
               + New {label.toLowerCase()}
             </button>
           ))}
+          <button
+            onClick={handlePrint}
+            disabled={!selectedId}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-gray-600/20 hover:bg-gray-600/30 disabled:opacity-40 text-gray-300 border border-white/10 rounded-md transition-colors"
+          >
+            <svg className="w-3 h-3" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <path d="M4 6V2h8v4M4 11H2V6h12v5h-2M4 9h8v5H4V9z" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            Експорт PDF
+          </button>
         </div>
       </div>
 
-      <div className="flex gap-1 bg-white/5 p-1 rounded-lg w-fit mb-6">
+      <div className="flex gap-1 bg-white/5 p-1 rounded-lg w-fit mb-6 no-print">
         {TABS.map((t) => (
           <button
             key={t.key}
@@ -152,6 +191,40 @@ export default function DigestPage() {
           </div>
         </div>
       )}
+
+      <div className="mt-8 rounded-xl border border-white/8 bg-white/[0.03] p-5 no-print">
+        <h2 className="text-sm font-semibold text-white mb-4">Digest Settings</h2>
+        <div className="flex flex-wrap gap-6 items-center">
+          <div className="flex flex-col gap-1">
+            <label className="text-xs text-gray-400">Delivery hour (UTC)</label>
+            <select
+              value={settings?.digestHour ?? 8}
+              onChange={(e) => handleHourChange(Number(e.target.value))}
+              disabled={savingSettings || !settings}
+              className="bg-white/5 border border-white/10 text-white text-sm rounded-md px-3 py-1.5 disabled:opacity-50"
+            >
+              {Array.from({ length: 24 }, (_, i) => (
+                <option key={i} value={i}>{String(i).padStart(2, '0')}:00</option>
+              ))}
+            </select>
+          </div>
+          <div className="flex flex-col gap-2">
+            <label className="text-xs text-gray-400">Email delivery</label>
+            <button
+              onClick={handleToggleEmail}
+              disabled={savingSettings || !settings}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors disabled:opacity-50 ${
+                settings?.digestEmailEnabled ? 'bg-indigo-600' : 'bg-white/10'
+              }`}
+            >
+              <span className={`inline-block h-4 w-4 rounded-full bg-white shadow-sm transition-transform ${
+                settings?.digestEmailEnabled ? 'translate-x-6' : 'translate-x-1'
+              }`} />
+            </button>
+          </div>
+          {savingSettings && <span className="text-xs text-gray-500">Saving…</span>}
+        </div>
+      </div>
     </div>
   );
 }

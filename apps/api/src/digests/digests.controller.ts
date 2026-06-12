@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Delete, Param, Query, Req, ParseIntPipe, DefaultValuePipe, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Param, Query, Req, Body, ParseIntPipe, DefaultValuePipe, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '@nih/auth';
 import { DigestsService } from './digests.service';
 
@@ -20,6 +20,19 @@ export class DigestsController {
   @Post()
   trigger(@Req() req: { user: { sub: string } }, @Query('period') period = 'day') {
     return this.digests.trigger(req.user.sub, period);
+  }
+
+  @Get('settings')
+  getSettings(@Req() req: { user: { sub: string } }) {
+    return this.digests.getSettings(req.user.sub);
+  }
+
+  @Patch('settings')
+  updateSettings(
+    @Req() req: { user: { sub: string } },
+    @Body() body: { digestHour?: number; digestEmailEnabled?: boolean },
+  ) {
+    return this.digests.updateSettings(req.user.sub, body);
   }
 
   @Get(':id')

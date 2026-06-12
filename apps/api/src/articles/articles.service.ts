@@ -44,7 +44,12 @@ export class ArticlesService {
 
     const where: Prisma.ArticleWhereInput = {
       feedArticles: { some: feedArticleWhere },
-      ...(query.q ? { title: { contains: query.q, mode: 'insensitive' } } : {}),
+      ...(query.q ? {
+        OR: [
+          { title: { contains: query.q, mode: 'insensitive' } },
+          { bodyText: { contains: query.q, mode: 'insensitive' } },
+        ],
+      } : {}),
       ...(classificationWhere ? { classifications: { some: classificationWhere } } : {}),
     };
 
@@ -146,23 +151,56 @@ export class ArticlesService {
   }
 
   async findSimilar(userId: string, id: string) {
-    const topEntities = await this.prisma.articleEntity.findMany({
-      where: { articleId: id, article: { feedArticles: { some: { userId } } } },
-      orderBy: { mentionCount: 'desc' },
-      take: 3,
-      select: { entityId: true },
-    });
-    if (!topEntities.length) {return [];}
+    const [topEntities, sourceClassification] = await Promise.all([
+      this.prisma.articleEntity.findMany({
+        where: { articleId: id, article: { feedArticles: { some: { userId } } } },
+        orderBy: { mentionCount: 'desc' },
+        take: 5,
+        select: { entityId: true },
+      }),
+      this.prisma.articleClassification.findFirst({
+        where: { articleId: id, userId },
+        select: { keywords: true },
+      }),
+    ]);
 
     const entityIds = topEntities.map((e) => e.entityId);
-    return this.prisma.article.findMany({
-      where: { id: { not: id }, feedArticles: { some: { userId } }, entities: { some: { entityId: { in: entityIds } } } },
-      take: 5,
+    const keywords = (sourceClassification?.keywords ?? []) as string[];
+
+    if (!entityIds.length && !keywords.length) {return [];}
+
+    const candidates = await this.prisma.article.findMany({
+      where: {
+        id: { not: id },
+        feedArticles: { some: { userId } },
+        OR: [
+          ...(entityIds.length ? [{ entities: { some: { entityId: { in: entityIds } } } }] : []),
+          ...(keywords.length ? [{ classifications: { some: { userId, keywords: { hasSome: keywords } } } }] : []),
+        ],
+      },
+      take: 20,
       orderBy: { publishedAt: 'desc' },
       select: {
         id: true, title: true, sourceDomain: true, publishedAt: true,
+        entities: { select: { entityId: true } },
+        classifications: { where: { userId }, take: 1, select: { keywords: true } },
         feedArticles: { where: { userId }, take: 1, select: { feed: { select: { title: true } } } },
       },
     });
+
+    const entitySet = new Set(entityIds);
+    const keywordSet = new Set(keywords.map((k) => k.toLowerCase()));
+
+    const scored = candidates.map((a) => {
+      const entityOverlap = a.entities.filter((e) => entitySet.has(e.entityId)).length;
+      const candidateKws = ((a.classifications[0]?.keywords ?? []) as string[]).map((k) => k.toLowerCase());
+      const keywordOverlap = candidateKws.filter((k) => keywordSet.has(k)).length;
+      return { ...a, _score: entityOverlap * 2 + keywordOverlap };
+    });
+
+    return scored
+      .sort((a, b) => b._score - a._score || new Date(b.publishedAt!).getTime() - new Date(a.publishedAt!).getTime())
+      .slice(0, 5)
+      .map(({ entities: _e, classifications: _c, _score: _s, ...rest }) => rest);
   }
 }

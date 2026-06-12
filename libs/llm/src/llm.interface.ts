@@ -58,10 +58,16 @@ export type ArticleAnalysisResult = z.infer<typeof ArticleAnalysisResultSchema>;
 export type EntityMatchResult = z.infer<typeof EntityMatchResultSchema>;
 export type DigestResult = z.infer<typeof DigestResultSchema>;
 
+export const BatchAnalysisResultSchema = z.object({
+  results: z.array(ArticleAnalysisResultSchema),
+});
+export type BatchAnalysisResult = z.infer<typeof BatchAnalysisResultSchema>;
+
 // ─── Service interface ────────────────────────────────────────────────────────
 
 export interface LlmService {
   analyzeArticle(input: ArticleAnalysisInput): Promise<ArticleAnalysisResult>;
+  analyzeArticleBatch(inputs: ArticleAnalysisInput[]): Promise<ArticleAnalysisResult[]>;
   matchEntities(input: EntityMatchInput): Promise<EntityMatchResult>;
   buildDigest(input: DigestInput): Promise<DigestResult>;
 }
@@ -71,6 +77,7 @@ export interface LlmService {
 export interface LlmProviderAdapter {
   readonly name: string;
   analyzeArticle(input: ArticleAnalysisInput): Promise<ArticleAnalysisResult>;
+  analyzeArticleBatch(inputs: ArticleAnalysisInput[]): Promise<ArticleAnalysisResult[]>;
   matchEntities(input: EntityMatchInput): Promise<EntityMatchResult>;
   buildDigest(input: DigestInput): Promise<DigestResult>;
 }

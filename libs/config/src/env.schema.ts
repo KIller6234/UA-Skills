@@ -45,6 +45,9 @@ export const envSchema = z.object({
   BULL_BOARD_USER: z.string().min(1),
   BULL_BOARD_PASS: z.string().min(8),
 
+  // Email (optional — email sending skipped when not set)
+  RESEND_API_KEY: z.string().optional(),
+
   // OAuth providers (optional — OAuth disabled when not set)
   GITHUB_CLIENT_ID: z.string().optional(),
   GITHUB_CLIENT_SECRET: z.string().optional(),

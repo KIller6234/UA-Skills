@@ -73,7 +73,7 @@ describe('AuthService', () => {
   let service: AuthService;
 
   beforeEach(() => {
-    service = new AuthService(mockPrisma as any, mockJwt as any, mockConfig as any);
+    service = new AuthService(mockPrisma as any, mockJwt as any, mockConfig as any, { sendConfirmationEmail: async () => {} } as any);
     jest.clearAllMocks();
     mockJwt.sign.mockReturnValue('mock-access-token');
     mockPrisma.categorizationAxis.create.mockResolvedValue({});

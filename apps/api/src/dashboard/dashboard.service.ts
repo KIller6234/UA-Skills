@@ -203,4 +203,54 @@ export class DashboardService {
       })),
     };
   }
+
+  async getLlmStats(userId: string) {
+    const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+
+    const [totalCalls, costAgg, cacheHits, byOperation, dailyRaw] = await Promise.all([
+      this.prisma.llmTelemetry.count({
+        where: { userId, createdAt: { gte: monthStart } },
+      }),
+      this.prisma.llmTelemetry.aggregate({
+        where: { userId, createdAt: { gte: monthStart } },
+        _sum: { costUsd: true },
+        _count: { cacheHit: true },
+      }),
+      this.prisma.llmTelemetry.count({
+        where: { userId, createdAt: { gte: monthStart }, cacheHit: true },
+      }),
+      this.prisma.llmTelemetry.groupBy({
+        by: ['operation'],
+        where: { userId, createdAt: { gte: monthStart } },
+        _count: { operation: true },
+      }),
+      this.prisma.$queryRaw<{ date: Date; calls: bigint }[]>(
+        Prisma.sql`
+          SELECT DATE_TRUNC('day', "createdAt") as date, COUNT(*) as calls
+          FROM "LlmTelemetry"
+          WHERE "userId" = ${userId}
+            AND "createdAt" >= ${sevenDaysAgo}
+          GROUP BY 1
+          ORDER BY 1 ASC
+        `
+      ),
+    ]);
+
+    const cacheHitRate = totalCalls > 0 ? Math.round((cacheHits / totalCalls) * 100) : 0;
+
+    return {
+      totalCallsThisMonth: totalCalls,
+      totalCostThisMonth: Number((costAgg._sum.costUsd ?? 0).toFixed(4)),
+      cacheHitRatePct: cacheHitRate,
+      callsByOperation: Object.fromEntries(
+        byOperation.map((r) => [r.operation, r._count.operation]),
+      ) as Record<string, number>,
+      dailyCallsLast7Days: (dailyRaw as { date: Date; calls: bigint }[]).map((r) => ({
+        date: r.date.toISOString().slice(0, 10),
+        calls: Number(r.calls),
+      })),
+    };
+  }
 }

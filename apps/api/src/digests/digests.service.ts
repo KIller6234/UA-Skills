@@ -132,4 +132,29 @@ export class DigestsService {
     if (!digest) {throw new NotFoundException('Digest not found');}
     await this.prisma.digest.delete({ where: { id } });
   }
+
+  async getSettings(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { digestHour: true, digestEmailEnabled: true, timezone: true },
+    });
+    if (!user) {throw new NotFoundException('User not found');}
+    return { digestHour: user.digestHour, digestEmailEnabled: user.digestEmailEnabled, timezone: user.timezone };
+  }
+
+  async updateSettings(userId: string, dto: { digestHour?: number; digestEmailEnabled?: boolean }) {
+    const data: { digestHour?: number; digestEmailEnabled?: boolean } = {};
+    if (dto.digestHour !== undefined) {
+      data.digestHour = Math.max(0, Math.min(23, Math.round(dto.digestHour)));
+    }
+    if (dto.digestEmailEnabled !== undefined) {
+      data.digestEmailEnabled = dto.digestEmailEnabled;
+    }
+    const user = await this.prisma.user.update({
+      where: { id: userId },
+      data,
+      select: { digestHour: true, digestEmailEnabled: true, timezone: true },
+    });
+    return { digestHour: user.digestHour, digestEmailEnabled: user.digestEmailEnabled, timezone: user.timezone };
+  }
 }

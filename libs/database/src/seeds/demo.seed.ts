@@ -310,7 +310,12 @@ async function main() {
           categoryIds: cats,
           model: 'claude-haiku-4-5',
           promptVersion: 'v1',
-          axisValues: {},
+          axisValues: {
+            content_type: tpl.importance >= 70 ? 'новина' : 'аналіз',
+            reader_level: tpl.importance >= 80 ? 'senior' : tpl.importance >= 60 ? 'middle' : 'junior',
+            region: 'global',
+            tone: 'нейтральна',
+          },
         },
       });
 

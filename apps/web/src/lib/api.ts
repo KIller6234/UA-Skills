@@ -289,6 +289,12 @@ export const api = {
     trigger: (period: string) =>
       request<{ queued: boolean; period: string }>('/digests', { method: 'POST', body: JSON.stringify({ period }) }),
     remove: (id: string) => request<void>(`/digests/${id}`, { method: 'DELETE' }),
+    getSettings: () => request<{ digestHour: number; digestEmailEnabled: boolean; timezone: string }>('/digests/settings'),
+    updateSettings: (body: { digestHour?: number; digestEmailEnabled?: boolean }) =>
+      request<{ digestHour: number; digestEmailEnabled: boolean; timezone: string }>('/digests/settings', {
+        method: 'PATCH',
+        body: JSON.stringify(body),
+      }),
   },
 
   regeneration: {

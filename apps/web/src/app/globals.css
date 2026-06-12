@@ -73,3 +73,38 @@ html.light {
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 99px; }
 ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.15); }
+
+/* ── Print / PDF export ──────────────────────────────────────── */
+@media print {
+  /* Hide chrome that has no place in a printed digest */
+  .no-print,
+  aside,
+  nav {
+    display: none !important;
+  }
+
+  /* Let the digest content fill the whole page */
+  body,
+  main {
+    background: #ffffff !important;
+    color: #000000 !important;
+    width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  /* Remove dark-mode card backgrounds so text stays readable */
+  * {
+    background-color: transparent !important;
+    color: inherit !important;
+    border-color: #d1d5db !important;
+    box-shadow: none !important;
+  }
+
+  /* Ensure links print their href */
+  a[href]::after {
+    content: " (" attr(href) ")";
+    font-size: 10px;
+    color: #6b7280;
+  }
+}

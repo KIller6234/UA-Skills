@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import useSWR from 'swr';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import useSWR, { mutate } from 'swr';
 import { formatDistanceToNow } from 'date-fns';
 import { api, type ArticleListItem, type ArticleDetail } from '@/lib/api';
 
@@ -245,6 +245,8 @@ export default function ArticlesPage() {
   const [debouncedQ, setDebouncedQ] = useState('');
   const [importance, setImportance] = useState<Importance>('');
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [lastRefreshed, setLastRefreshed] = useState<string | null>(null);
+  const swrKeyRef = useRef<string>('');
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedQ(query), 300);
@@ -258,11 +260,30 @@ export default function ArticlesPage() {
   }, []);
 
   const swrKey = `articles-${page}-${debouncedQ}-${importance}`;
+  swrKeyRef.current = swrKey;
+
   const { data, isLoading } = useSWR(
     swrKey,
     () => api.articles.list({ page, limit: 20, q: debouncedQ || undefined, importance: importance || undefined }),
     { revalidateOnFocus: false },
   );
+
+  // Auto-refresh every 30 seconds
+  useEffect(() => {
+    const formatTime = (d: Date): string => {
+      const hh = String(d.getHours()).padStart(2, '0');
+      const mm = String(d.getMinutes()).padStart(2, '0');
+      const ss = String(d.getSeconds()).padStart(2, '0');
+      return `${hh}:${mm}:${ss}`;
+    };
+
+    const id = setInterval(() => {
+      void mutate(swrKeyRef.current);
+      setLastRefreshed(formatTime(new Date()));
+    }, 30_000);
+
+    return () => clearInterval(id);
+  }, []);
 
   const totalPages = data ? Math.ceil(data.total / data.limit) : 1;
 
@@ -274,9 +295,16 @@ export default function ArticlesPage() {
         <div className="px-5 pt-6 pb-4 border-b border-white/5 space-y-3 shrink-0">
           <div className="flex items-center justify-between">
             <h1 className="text-[15px] font-semibold text-white">Articles</h1>
-            {data && (
-              <span className="text-[12px] text-gray-600">{data.total.toLocaleString()} total</span>
-            )}
+            <div className="flex items-center gap-3">
+              {lastRefreshed && (
+                <span className="text-[11px] text-gray-600">
+                  Оновлено: {lastRefreshed}
+                </span>
+              )}
+              {data && (
+                <span className="text-[12px] text-gray-600">{data.total.toLocaleString()} total</span>
+              )}
+            </div>
           </div>
 
           {/* Search */}

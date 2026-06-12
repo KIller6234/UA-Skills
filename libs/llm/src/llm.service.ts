@@ -231,6 +231,65 @@ export class LlmServiceImpl implements LlmService, OnModuleInit {
     return result;
   }
 
+  async analyzeArticleBatch(inputs: ArticleAnalysisInput[]): Promise<ArticleAnalysisResult[]> {
+    const model = this.config.get('LLM_MODEL_GOOGLE');
+    const promptVersion = this.config.get('LLM_PROMPT_VERSION');
+
+    const cacheKeys = inputs.map((i) => this.makeCacheKey(i.contentHash, 'analyze', model, promptVersion));
+    const cached = await Promise.all(cacheKeys.map((k) => this.getCache<ArticleAnalysisResult>(k)));
+
+    const uncachedIndices = inputs
+      .map((_, idx) => idx)
+      .filter((idx) => cached[idx] === null);
+
+    if (uncachedIndices.length === 0) {
+      return cached as ArticleAnalysisResult[];
+    }
+
+    const uncachedInputs = uncachedIndices.map((idx) => inputs[idx] as ArticleAnalysisInput);
+    const startMs = Date.now();
+    let batchResults: ArticleAnalysisResult[];
+    let provider: string;
+
+    try {
+      ({ result: batchResults, provider } = await this.callWithFailover(
+        (adapter) => adapter.analyzeArticleBatch(uncachedInputs),
+        'analyzeArticleBatch',
+      ));
+    } catch (err) {
+      await this.recordTelemetry({
+        operation: 'batch_analyze',
+        provider: 'unknown',
+        model,
+        cacheHit: false,
+        success: false,
+        errorCode: err instanceof Error ? err.name : 'unknown',
+      });
+      throw err;
+    }
+
+    await Promise.all(
+      uncachedIndices.map((origIdx, batchIdx) =>
+        this.setCache(cacheKeys[origIdx]!, 'analyze', inputs[origIdx]!.contentHash, batchResults[batchIdx] as ArticleAnalysisResult),
+      ),
+    );
+
+    await this.recordTelemetry({
+      operation: 'batch_analyze',
+      provider,
+      model,
+      latencyMs: Date.now() - startMs,
+      cacheHit: uncachedIndices.length < inputs.length,
+      success: true,
+    });
+
+    const results = [...cached] as ArticleAnalysisResult[];
+    uncachedIndices.forEach((origIdx, batchIdx) => {
+      results[origIdx] = batchResults[batchIdx] as ArticleAnalysisResult;
+    });
+    return results;
+  }
+
   async matchEntities(input: EntityMatchInput): Promise<EntityMatchResult> {
     const model = this.config.get('LLM_MODEL_GOOGLE');
     const candidateHash = crypto

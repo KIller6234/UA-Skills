@@ -17,6 +17,7 @@ import { type JwtPayload } from '@nih/auth';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
+import { EmailService } from './email.service';
 
 @Injectable()
 export class AuthService {
@@ -24,6 +25,7 @@ export class AuthService {
     private readonly prisma: PrismaService,
     private readonly jwt: JwtService,
     private readonly config: ConfigService<Env, true>,
+    private readonly emailService: EmailService,
   ) {}
 
   async register(dto: RegisterDto): Promise<{ confirmUrl: string }> {
@@ -48,7 +50,10 @@ export class AuthService {
 
     await this.seedDefaultData(user.id);
 
-    return { confirmUrl: `/confirm?token=${user.emailConfirmToken}` };
+    const confirmUrl = `/confirm?token=${user.emailConfirmToken}`;
+    await this.emailService.sendConfirmationEmail(dto.email, confirmUrl);
+
+    return { confirmUrl };
   }
 
   async confirmEmail(token: string): Promise<void> {

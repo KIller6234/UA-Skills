@@ -10,12 +10,14 @@ import {
   type DigestInput,
   type DigestResult,
   ArticleAnalysisResultSchema,
+  BatchAnalysisResultSchema,
   EntityMatchResultSchema,
   DigestResultSchema,
   LlmValidationError,
 } from '../llm.interface';
 import {
   buildAnalysisPrompt,
+  buildBatchAnalysisPrompt,
   buildEntityMatchPrompt,
   buildDigestPrompt,
 } from '../prompt-builder';
@@ -42,6 +44,28 @@ export class GoogleAdapter implements LlmProviderAdapter {
     } catch (err) {
       throw new LlmValidationError(
         `Google adapter analyzeArticle failed: ${err instanceof Error ? err.message : String(err)}`,
+      );
+    }
+  }
+
+  async analyzeArticleBatch(inputs: ArticleAnalysisInput[]): Promise<ArticleAnalysisResult[]> {
+    if (inputs.length === 1) return [await this.analyzeArticle(inputs[0]!)];
+    try {
+      const { object } = await generateObject({
+        model: this.model,
+        schema: BatchAnalysisResultSchema,
+        prompt: buildBatchAnalysisPrompt(inputs),
+        temperature: 0.1,
+      });
+      if (object.results.length !== inputs.length) {
+        throw new LlmValidationError(
+          `Batch result count mismatch: expected ${inputs.length}, got ${object.results.length}`,
+        );
+      }
+      return object.results;
+    } catch (err) {
+      throw new LlmValidationError(
+        `Google adapter analyzeArticleBatch failed: ${err instanceof Error ? err.message : String(err)}`,
       );
     }
   }
