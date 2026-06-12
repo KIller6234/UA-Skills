@@ -45,6 +45,12 @@ export const envSchema = z.object({
   BULL_BOARD_USER: z.string().min(1),
   BULL_BOARD_PASS: z.string().min(8),
 
+  // OAuth providers (optional — OAuth disabled when not set)
+  GITHUB_CLIENT_ID: z.string().optional(),
+  GITHUB_CLIENT_SECRET: z.string().optional(),
+  GOOGLE_CLIENT_ID: z.string().optional(),
+  GOOGLE_CLIENT_SECRET: z.string().optional(),
+
   // App
   FRONTEND_URL: z.string().default('http://localhost:3001'),
   SHOW_BULL_BOARD_LINK: z
