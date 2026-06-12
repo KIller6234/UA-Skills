@@ -16,7 +16,7 @@ if (!redisUrl) {
 
 const connection = new IORedis(redisUrl, { maxRetriesPerRequest: null });
 
-const QUEUE_NAMES = ['feed:poll', 'article:process', 'article:regenerate', 'digest:build'];
+const QUEUE_NAMES = ['feed-poll', 'article-process', 'article-regenerate', 'digest-build'];
 
 const queues = QUEUE_NAMES.map(
   (name) => new BullMQAdapter(new Queue(name, { connection })),
